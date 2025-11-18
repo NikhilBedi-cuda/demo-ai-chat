@@ -1,4 +1,6 @@
-# Logs
+app.get('/', (req, res) => {
+  res.send('Hello World');
+});# Logs
 logs
 *.log
 npm-debug.log*
