@@ -30,9 +30,7 @@ app.get('/', (req, res) => {
 app.post('/chat', async (req, res) => {
   const userPrompt = req.body.prompt;
 
-  // Step 1: Skipping Cisco AI Defense inspection (optional)
-  // If needed in future, uncomment the code below:
-  /*
+  // Step 1: Inspect prompt with Cisco AI Defense (MANDATORY)
   try {
     const inspection = await axios.post(process.env.CISCO_AI_DEFENSE_ENDPOINT, {
       prompt: userPrompt
@@ -48,25 +46,42 @@ app.post('/chat', async (req, res) => {
     console.error('Cisco AI Defense inspection error:', error.message);
     return res.status(500).json({ error: 'Cisco inspection failed', details: error.message });
   }
-  */
 
-  // Step 2: Send prompt to OpenAI
+  // Step 2: Send prompt to OpenAI (ChatGPT)
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4-turbo',
       messages: [{ role: 'user', content: userPrompt }]
     });
     res.json({ reply: response.choices[0].message.content });
   } catch (error) {
-    console.error('OpenAI Error:', error.message);
-    console.error('Error Status:', error.status);
-    console.error('Error Type:', error.type);
-    res.status(500).json({ 
-      error: 'OpenAI request failed', 
-      details: error.message,
-      type: error.type,
-      status: error.status
-    });
+    // Fallback to gpt-3.5-turbo if gpt-4-turbo is not available
+    if (error.status === 404) {
+      console.log('gpt-4-turbo not available, falling back to gpt-3.5-turbo');
+      try {
+        const response = await openai.chat.completions.create({
+          model: 'gpt-3.5-turbo',
+          messages: [{ role: 'user', content: userPrompt }]
+        });
+        res.json({ reply: response.choices[0].message.content });
+      } catch (fallbackError) {
+        console.error('OpenAI Error:', fallbackError.message);
+        res.status(500).json({ 
+          error: 'OpenAI request failed', 
+          details: fallbackError.message
+        });
+      }
+    } else {
+      console.error('OpenAI Error:', error.message);
+      console.error('Error Status:', error.status);
+      console.error('Error Type:', error.type);
+      res.status(500).json({ 
+        error: 'OpenAI request failed', 
+        details: error.message,
+        type: error.type,
+        status: error.status
+      });
+    }
   }
 });
 
