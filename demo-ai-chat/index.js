@@ -30,26 +30,25 @@ app.get('/', (req, res) => {
 app.post('/chat', async (req, res) => {
   const userPrompt = req.body.prompt;
 
-  // Step 1: Inspect prompt with Cisco AI Defense (OPTIONAL - for development)
-  if (process.env.CISCO_AI_DEFENSE_ENDPOINT && process.env.CISCO_API_KEY) {
-    try {
-      const inspection = await axios.post(process.env.CISCO_AI_DEFENSE_ENDPOINT, {
-        prompt: userPrompt
-      }, {
-        headers: { Authorization: `Bearer ${process.env.CISCO_API_KEY}` },
-        timeout: 5000
-      });
+  // Step 1: Skipping Cisco AI Defense inspection (optional)
+  // If needed in future, uncomment the code below:
+  /*
+  try {
+    const inspection = await axios.post(process.env.CISCO_AI_DEFENSE_ENDPOINT, {
+      prompt: userPrompt
+    }, {
+      headers: { Authorization: `Bearer ${process.env.CISCO_API_KEY}` },
+      timeout: 5000
+    });
 
-      if (inspection.data.status !== 'approved') {
-        return res.status(400).json({ error: 'Prompt rejected by Cisco AI Defense' });
-      }
-    } catch (error) {
-      console.warn('Cisco AI Defense check failed (continuing):', error.message);
-      // Continue without Cisco check for development
+    if (inspection.data.status !== 'approved') {
+      return res.status(400).json({ error: 'Prompt rejected by Cisco AI Defense' });
     }
-  } else {
-    console.log('Cisco credentials not configured - skipping security check');
+  } catch (error) {
+    console.error('Cisco AI Defense inspection error:', error.message);
+    return res.status(500).json({ error: 'Cisco inspection failed', details: error.message });
   }
+  */
 
   // Step 2: Send prompt to OpenAI
   try {
